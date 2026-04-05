@@ -24,4 +24,8 @@ def state_env():
     return my_env.state()
 
 def main():
+    # Use "server.app:app" because the file is inside the 'server' folder
     uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
+if __name__ == "__main__":
+    main()
