@@ -10,5 +10,5 @@ COPY . /app
 # Install the required libraries
 RUN pip install --no-cache-dir openenv-core pydantic openai
 
-# Command to run when the container starts (this satisfies the HF Space requirement)
-CMD ["python", "-c", "import time; print('Environment is ready!'); time.sleep(86400)"]
+# Start the web server from the new server folder
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
