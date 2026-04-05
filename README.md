@@ -36,10 +36,9 @@ Rewards are strictly deterministic (0.0 to 1.0) to ensure accurate baseline grad
 pip install openenv-core pydantic openai
 
 2. Set API Key
-
 Bash
 export HF_TOKEN="your_huggingface_read_token"
-3. Run Inference Baseline
 
+3. Run Inference Baseline
 Bash
 python inference.py
