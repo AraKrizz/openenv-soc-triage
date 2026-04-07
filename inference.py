@@ -6,17 +6,31 @@ from openai import OpenAI
 from env import SOCTriageEnv
 from models import Action
 
-API_KEY = os.getenv("HF_TOKEN")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+# 1. Grab the environment variables injected by the Hackathon Judges
+api_key = os.getenv("API_KEY", "dummy-key-for-validator")
+base_url = os.getenv("API_BASE_URL", "https://api.huggingface.co/models/")
+model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+# 2. Initialize the client using those variables
+client = OpenAI(
+    base_url=base_url,
+    api_key=api_key,
+)
+
+SYSTEM_PROMPT = """You are a Junior SOC Analyst.
+You will receive a JSON state detailing the network environment.
+You must respond with a strictly valid JSON object containing:
+- "command": The tool to execute (analyze_log, block_ip, ignore_alert).
+- "target": The specific IP address to act upon.
+Example: {"command": "block_ip", "target": "192.168.1.50"}
+Respond ONLY with JSON. Do not include markdown formatting or explanations."""
 
 async def run_inference():
     env = SOCTriageEnv()
     obs = env.reset()
     
-    print(f"[START] task=soc-threat-block env=soc-triage model={MODEL_NAME}")
+    # Notice we are using the lowercase model_name here
+    print(f"[START] task=soc-threat-block env=soc-triage model={model_name}")
 
     total_reward = 0.0
     steps = 0
@@ -24,8 +38,10 @@ async def run_inference():
 
     for i in range(1, 6):
         prompt = f"You are a SOC Agent. Find the malicious IP in the logs and immediately use the 'block_ip' command on it.\nObs: {obs.model_dump_json()}\nRespond ONLY with a JSON object: {{'command': '...', 'target': '...'}}"
+        
+        # Notice we are using the lowercase model_name here too
         response = client.chat.completions.create(
-            model=MODEL_NAME,
+            model=model_name,
             messages=[{"role": "user", "content": prompt}],
             response_format={ "type": "json_object" }
         )
