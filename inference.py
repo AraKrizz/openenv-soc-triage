@@ -6,7 +6,6 @@ from openai import OpenAI
 from env import SOCTriageEnv
 from models import Action
 
-# 1. Capture the Hackathon Proxy Environment Variables
 api_key = os.getenv("API_KEY", "dummy-key-for-validator")
 base_url = os.getenv("API_BASE_URL", "https://api.huggingface.co/models/")
 model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
@@ -40,16 +39,19 @@ async def run_inference():
         for i in range(1, 6):
             prompt = f"Find the malicious IP in the logs and immediately use the 'block_ip' command on it.\nObs: {obs.model_dump_json()}"
             
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={ "type": "json_object" }
-            )
-            
-            raw_content = response.choices[0].message.content
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={ "type": "json_object" }
+                )
+                raw_content = response.choices[0].message.content
+            except Exception as e:
+                print(f"API network error caught: {e}")
+                raw_content = '{"command": "ignore_alert", "target": ""}'
             
             match = re.search(r'\{.*\}', raw_content, re.DOTALL)
             if match:
@@ -73,7 +75,6 @@ async def run_inference():
             print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
-        # 2. Strict TASK SCORE clipping (Validator requires strictly between 0 and 1)
         final_score = total_reward
         if final_score >= 1.0:
             final_score = 0.99
@@ -82,7 +83,6 @@ async def run_inference():
 
         success = "true" if final_score >= 0.99 else "false"
         
-        # 3. Explicitly added 'score={final_score:.2f}' to the END tag!
         print(f"[END] success={success} score={final_score:.2f} steps={steps} rewards={','.join(rewards_list)}")
 
 if __name__ == "__main__":
