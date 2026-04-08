@@ -16,7 +16,6 @@ client = OpenAI(
     api_key=api_key,
 )
 
-# 2. Define the System Prompt
 SYSTEM_PROMPT = """You are a Junior SOC Analyst.
 You will receive a JSON state detailing the network environment.
 You must respond with a strictly valid JSON object containing:
@@ -26,7 +25,6 @@ Example: {"command": "block_ip", "target": "192.168.1.50"}
 Respond ONLY with JSON. Do not include markdown formatting or explanations."""
 
 async def run_inference():
-    # 3. Loop through exactly 3 tasks for the grader
     tasks = ["soc-triage-easy", "soc-triage-medium", "soc-triage-hard"]
 
     for current_task in tasks:
@@ -42,7 +40,6 @@ async def run_inference():
         for i in range(1, 6):
             prompt = f"Find the malicious IP in the logs and immediately use the 'block_ip' command on it.\nObs: {obs.model_dump_json()}"
             
-            # 4. Send BOTH the System Prompt and User Prompt
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[
@@ -54,7 +51,6 @@ async def run_inference():
             
             raw_content = response.choices[0].message.content
             
-            # 5. Bulletproof JSON parsing
             match = re.search(r'\{.*\}', raw_content, re.DOTALL)
             if match:
                 clean_json = match.group(0)
@@ -70,21 +66,24 @@ async def run_inference():
             
             obs, reward, done, _ = env.step(action)
             
-            # 6. Strict score clipping (Must be between 0 and 1)
-            if reward >= 1.0:
-                reward = 0.99
-            elif reward <= 0.0:
-                reward = 0.01
-
             steps += 1
-            total_reward += reward
+            total_reward += float(reward)
             rewards_list.append(f"{reward:.2f}")
 
             print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
-        success = "true" if total_reward >= 0.99 else "false"
-        print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}")
+        # 2. Strict TASK SCORE clipping (Validator requires strictly between 0 and 1)
+        final_score = total_reward
+        if final_score >= 1.0:
+            final_score = 0.99
+        elif final_score <= 0.0:
+            final_score = 0.01
+
+        success = "true" if final_score >= 0.99 else "false"
+        
+        # 3. Explicitly added 'score={final_score:.2f}' to the END tag!
+        print(f"[END] success={success} score={final_score:.2f} steps={steps} rewards={','.join(rewards_list)}")
 
 if __name__ == "__main__":
     asyncio.run(run_inference())
