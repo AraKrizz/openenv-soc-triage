@@ -30,7 +30,7 @@ async def run_inference():
     tasks = ["soc-triage-easy", "soc-triage-medium", "soc-triage-hard"]
 
     for current_task in tasks:
-        env = SOCTriageEnv()
+        env = SOCTriageEnv(task_id=current_task)
         obs = env.reset()
         
         print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}")
