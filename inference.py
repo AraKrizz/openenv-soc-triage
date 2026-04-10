@@ -6,16 +6,13 @@ from openai import OpenAI
 from env import SOCTriageEnv
 from models import Action
 
-# 1. STRICT GUIDELINES: Read exact environment variables
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.huggingface.co/models/")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Per the guidelines, this must raise an error if missing
 if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required")
 
-# 2. Initialize client with HF_TOKEN
 client = OpenAI(
     base_url=API_BASE_URL,
     api_key=HF_TOKEN
@@ -36,7 +33,6 @@ async def run_inference():
         env = SOCTriageEnv()
         obs = env.reset()
         
-        # EXACT FORMAT: [START] task=<task_name> env=<benchmark> model=<model_name>
         print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}")
 
         total_reward = 0.0
@@ -72,25 +68,30 @@ async def run_inference():
                 
             action = Action(command=res_data.get('command', 'ignore_alert'), target=res_data.get('target', ''))
             
-            obs, reward, done, _ = env.step(action)
+            obs, original_reward, done, _ = env.step(action)
             
-            # Strict reward boundaries (0.01 to 0.99)
-            if reward >= 1.0:
-                reward = 0.99
-            elif reward <= 0.0:
-                reward = 0.01
+            # Force 'done' on the 5th step to prevent endless loops
+            if i == 5:
+                done = True
+            
+            # THE FIX: Only calculate the 0.99 or 0.01 on the final step.
+            if done:
+                if original_reward >= 1.0:
+                    step_reward = 0.99
+                else:
+                    step_reward = 0.01
+            else:
+                step_reward = 0.00
 
             steps += 1
-            total_reward += float(reward)
-            rewards_list.append(f"{reward:.2f}")
+            total_reward += step_reward
+            rewards_list.append(f"{step_reward:.2f}")
 
-            # EXACT FORMAT: [STEP] step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
-            print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
+            print(f"[STEP] step={steps} action={action.command} reward={step_reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
         success = "true" if total_reward >= 0.99 else "false"
         
-        # EXACT FORMAT: [END] success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
         print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}")
 
 if __name__ == "__main__":
