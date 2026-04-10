@@ -24,8 +24,8 @@ class SOCTriageEnv:
     def step(self, action: Action):
         self.state_data["step_count"] += 1
         
-        # Default reward is now strictly within the 0 to 1 boundary
-        reward = 0.01 
+        # THE FIX: Ongoing steps MUST be 0.0 so they don't add up!
+        reward = 0.0 
         done = False
 
         if action.command == "block_ip" and action.target == self.current_task['target_ip']:
