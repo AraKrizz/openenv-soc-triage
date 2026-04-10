@@ -68,26 +68,13 @@ async def run_inference():
                 
             action = Action(command=res_data.get('command', 'ignore_alert'), target=res_data.get('target', ''))
             
-            obs, original_reward, done, _ = env.step(action)
+            obs, reward, done, _ = env.step(action)
             
-            # Force 'done' on the 5th step to prevent endless loops
-            if i == 5:
-                done = True
-            
-            # THE FIX: Only calculate the 0.99 or 0.01 on the final step.
-            if done:
-                if original_reward >= 1.0:
-                    step_reward = 0.99
-                else:
-                    step_reward = 0.01
-            else:
-                step_reward = 0.00
-
             steps += 1
-            total_reward += step_reward
-            rewards_list.append(f"{step_reward:.2f}")
+            total_reward += float(reward)
+            rewards_list.append(f"{reward:.2f}")
 
-            print(f"[STEP] step={steps} action={action.command} reward={step_reward:.2f} done={str(done).lower()} error=null")
+            print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
         success = "true" if total_reward >= 0.99 else "false"
