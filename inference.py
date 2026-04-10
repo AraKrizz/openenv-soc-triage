@@ -6,13 +6,19 @@ from openai import OpenAI
 from env import SOCTriageEnv
 from models import Action
 
-api_key = os.getenv("API_KEY", "dummy-key-for-validator")
-base_url = os.getenv("API_BASE_URL", "https://api.huggingface.co/models/")
-model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+# 1. STRICT GUIDELINES: Read exact environment variables
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.huggingface.co/models/")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
+# Per the guidelines, this must raise an error if missing
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
+
+# 2. Initialize client with HF_TOKEN
 client = OpenAI(
-    base_url=base_url,
-    api_key=api_key,
+    base_url=API_BASE_URL,
+    api_key=HF_TOKEN
 )
 
 SYSTEM_PROMPT = """You are a Junior SOC Analyst.
@@ -21,7 +27,7 @@ You must respond with a strictly valid JSON object containing:
 - "command": The tool to execute (analyze_log, block_ip, ignore_alert).
 - "target": The specific IP address to act upon.
 Example: {"command": "block_ip", "target": "192.168.1.50"}
-Respond ONLY with JSON. Do not include markdown formatting or explanations."""
+Respond ONLY with JSON."""
 
 async def run_inference():
     tasks = ["soc-triage-easy", "soc-triage-medium", "soc-triage-hard"]
@@ -30,7 +36,8 @@ async def run_inference():
         env = SOCTriageEnv()
         obs = env.reset()
         
-        print(f"[START] task={current_task} env=soc-triage model={model_name}")
+        # EXACT FORMAT: [START] task=<task_name> env=<benchmark> model=<model_name>
+        print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}")
 
         total_reward = 0.0
         steps = 0
@@ -41,7 +48,7 @@ async def run_inference():
             
             try:
                 response = client.chat.completions.create(
-                    model=model_name,
+                    model=MODEL_NAME,
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": prompt}
@@ -50,7 +57,6 @@ async def run_inference():
                 )
                 raw_content = response.choices[0].message.content
             except Exception as e:
-                print(f"API network error caught: {e}")
                 raw_content = '{"command": "ignore_alert", "target": ""}'
             
             match = re.search(r'\{.*\}', raw_content, re.DOTALL)
@@ -68,22 +74,24 @@ async def run_inference():
             
             obs, reward, done, _ = env.step(action)
             
+            # Strict reward boundaries (0.01 to 0.99)
+            if reward >= 1.0:
+                reward = 0.99
+            elif reward <= 0.0:
+                reward = 0.01
+
             steps += 1
             total_reward += float(reward)
             rewards_list.append(f"{reward:.2f}")
 
+            # EXACT FORMAT: [STEP] step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
             print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
-        final_score = total_reward
-        if final_score >= 1.0:
-            final_score = 0.99
-        elif final_score <= 0.0:
-            final_score = 0.01
-
-        success = "true" if final_score >= 0.99 else "false"
+        success = "true" if total_reward >= 0.99 else "false"
         
-        print(f"[END] success={success} score={final_score:.2f} steps={steps} rewards={','.join(rewards_list)}")
+        # EXACT FORMAT: [END] success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
+        print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}")
 
 if __name__ == "__main__":
     asyncio.run(run_inference())
