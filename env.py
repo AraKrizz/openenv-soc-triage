@@ -1,11 +1,6 @@
 import random
 from models import Observation, Action
 
-# THE TRAP 3 FIX: Parameterless Grader safely stored inside env.py
-def soc_triage_grader(*args, **kwargs) -> float:
-    # If the validator calls this dumbly with no arguments, it gets a safe 0.50
-    return 0.50
-
 class SOCTriageEnv:
     def __init__(self):
         self.tasks = [
@@ -30,13 +25,12 @@ class SOCTriageEnv:
         self.state_data["step_count"] += 1
         step_c = self.state_data["step_count"]
         
-        # PARANOID MATH: No step is ever 0.0. Intermediate steps get 0.01.
         reward = 0.01 
         done = False
         info = {}
 
         if action.command == "block_ip" and action.target == self.current_task['target_ip']:
-            reward = 0.90 # Final success is 0.90 (Max sum will be ~0.94)
+            reward = 0.90 
             done = True
         elif action.command == "ignore_alert":
             reward = 0.10
@@ -45,7 +39,6 @@ class SOCTriageEnv:
             reward = 0.10
             done = True
 
-        # Explicitly pass the score to the internal environment framework
         if done:
             info["score"] = reward
 
