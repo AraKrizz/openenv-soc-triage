@@ -1,8 +1,5 @@
-def soc_triage_grader(trajectory: dict = None) -> float:
-    """
-    Evaluates the agent's trajectory. 
-    Survives the OpenEnv Phase 2 Reflection Trap.
-    """
+def _base_grader(trajectory: dict = None) -> float:
+    """Core logic that survives the Phase 2 Reflection Trap."""
     if trajectory is None:
         return 0.50
 
@@ -28,5 +25,17 @@ def soc_triage_grader(trajectory: dict = None) -> float:
         else:
             return 0.10
 
-    except Exception as e:
+    except Exception:
         return 0.01
+
+# The three explicit functions requested by the Hackathon framework
+def grade_easy(trajectory: dict = None) -> float:
+    return _base_grader(trajectory)
+
+def grade_medium(trajectory: dict = None) -> float:
+    return _base_grader(trajectory)
+
+def grade_hard(trajectory: dict = None) -> float:
+    return _base_grader(trajectory)
+
+
