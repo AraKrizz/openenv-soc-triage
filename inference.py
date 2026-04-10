@@ -27,7 +27,8 @@ Example: {"command": "block_ip", "target": "192.168.1.50"}
 Respond ONLY with JSON."""
 
 async def run_inference():
-    tasks = ["soc-triage-easy", "soc-triage-medium", "soc-triage-hard"]
+    # EXACT MATCH to openenv.yaml
+    tasks = ["easy", "medium", "hard"]
 
     for current_task in tasks:
         env = SOCTriageEnv(task_id=current_task)
