@@ -77,8 +77,8 @@ async def run_inference():
             print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
             if done: break
 
-        # Updated threshold to account for dynamic penalties
-        success = "true" if total_reward >= 0.80 else "false"
+        # Updated success threshold to accommodate the new math
+        success = "true" if total_reward >= 0.85 else "false"
         
         print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}")
 
