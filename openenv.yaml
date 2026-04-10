@@ -4,6 +4,9 @@ environment:
   description: "A real-world SOC analyst simulation where an agent must parse security logs and block malicious IP addresses."
   version: "1.0.0"
   tasks:
-    - easy
-    - medium
-    - hard
+  - id: soc-triage-easy
+    grader: grader.soc_triage_grader
+  - id: soc-triage-medium
+    grader: grader.soc_triage_grader
+  - id: soc-triage-hard
+    grader: grader.soc_triage_grader
