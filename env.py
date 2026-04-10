@@ -1,14 +1,14 @@
+import random
 from models import Observation, Action
 
 class SOCTriageEnv:
-    def __init__(self, task_id="soc-triage-easy"):
-        # Explicitly map the IDs to their respective target IPs
+    def __init__(self, task_id="easy"):
+        # The exact names the validator is looking for
         self.tasks = {
-            "soc-triage-easy": "192.168.1.50",
-            "soc-triage-medium": "10.0.0.5",
-            "soc-triage-hard": "172.16.0.22"
+            "easy": "192.168.1.50",
+            "medium": "10.0.0.5",
+            "hard": "172.16.0.22"
         }
-        # Safely get the target IP based on the requested task_id
         self.target_ip = self.tasks.get(task_id, "192.168.1.50")
         self.state_data = {"step_count": 0}
 
@@ -52,5 +52,6 @@ class SOCTriageEnv:
 
     def state(self):
         return self.state_data
+
 
         
