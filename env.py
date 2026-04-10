@@ -1,22 +1,22 @@
-import random
 from models import Observation, Action
 
 class SOCTriageEnv:
-    def __init__(self):
-        self.tasks = [
-            {"id": "soc-triage-easy", "target_ip": "192.168.1.50", "desc": "Block IP"},
-            {"id": "soc-triage-medium", "target_ip": "10.0.0.5", "desc": "Block IP"},
-            {"id": "soc-triage-hard", "target_ip": "172.16.0.22", "desc": "Block IP"}
-        ]
-        self.current_task = self.tasks[0]
+    def __init__(self, task_id="soc-triage-easy"):
+        # Explicitly map the IDs to their respective target IPs
+        self.tasks = {
+            "soc-triage-easy": "192.168.1.50",
+            "soc-triage-medium": "10.0.0.5",
+            "soc-triage-hard": "172.16.0.22"
+        }
+        # Safely get the target IP based on the requested task_id
+        self.target_ip = self.tasks.get(task_id, "192.168.1.50")
         self.state_data = {"step_count": 0}
 
     def reset(self) -> Observation:
         self.state_data = {"step_count": 0}
-        self.current_task = random.choice(self.tasks)
         
         return Observation(
-            logs=[f"SEC-ALERT: High traffic detected from {self.current_task['target_ip']}"],
+            logs=[f"SEC-ALERT: High traffic detected from {self.target_ip}"],
             alert_status="Unresolved",
             available_tools=["analyze_log", "block_ip", "ignore_alert"]
         )
@@ -29,7 +29,7 @@ class SOCTriageEnv:
         done = False
         info = {}
 
-        if action.command == "block_ip" and action.target == self.current_task['target_ip']:
+        if action.command == "block_ip" and action.target == self.target_ip:
             reward = 0.90 
             done = True
         elif action.command == "ignore_alert":
@@ -52,3 +52,5 @@ class SOCTriageEnv:
 
     def state(self):
         return self.state_data
+
+        
