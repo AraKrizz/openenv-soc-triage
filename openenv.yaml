@@ -5,8 +5,8 @@ environment:
   version: "1.0.0"
   tasks:
   - id: soc-triage-easy
-    grader: server.grader.soc_triage_grader
+    grader: server.grader.grade_easy
   - id: soc-triage-medium
-    grader: server.grader.soc_triage_grader
+    grader: server.grader.grade_medium
   - id: soc-triage-hard
-    grader: server.grader.soc_triage_grader
+    grader: server.grader.grade_hard
