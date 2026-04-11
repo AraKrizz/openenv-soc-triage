@@ -27,14 +27,14 @@ Example: {"command": "block_ip", "target": "192.168.1.50"}
 Respond ONLY with JSON."""
 
 async def run_inference():
-    # EXACT MATCH to openenv.yaml
     tasks = ["easy", "medium", "hard"]
 
     for current_task in tasks:
         env = SOCTriageEnv(task_id=current_task)
         obs = env.reset()
         
-        print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}")
+        # FLUSH FIX APPLIED
+        print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}", flush=True)
 
         total_reward = 0.0
         steps = 0
@@ -75,12 +75,14 @@ async def run_inference():
             total_reward += float(reward)
             rewards_list.append(f"{reward:.2f}")
 
-            print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null")
+            # FLUSH FIX APPLIED
+            print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null", flush=True)
             if done: break
 
         success = "true" if total_reward >= 0.85 else "false"
         
-        print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}")
+        # FLUSH FIX APPLIED (Ensuring the log is not swallowed)
+        print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}", flush=True)
 
 if __name__ == "__main__":
     asyncio.run(run_inference())
