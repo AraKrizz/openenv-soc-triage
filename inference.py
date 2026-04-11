@@ -18,8 +18,11 @@ client = OpenAI(
     api_key=HF_TOKEN
 )
 
-SYSTEM_PROMPT = """You are a Junior SOC Analyst.
-You will receive a JSON state detailing the network environment.
+# UPGRADED PROMPT to handle the Cyber Range noise
+SYSTEM_PROMPT = """You are an Elite Tier 2 SOC Analyst AI.
+You will receive a JSON state detailing noisy network logs.
+Your task is to analyze the logs, identify the true malicious actor (ignoring benign background noise), and take action.
+Look for SQL injections, rapid brute-force attempts, or suspicious command execution (like reverse shells or accessing /etc/shadow).
 You must respond with a strictly valid JSON object containing:
 - "command": The tool to execute (analyze_log, block_ip, ignore_alert).
 - "target": The specific IP address to act upon.
@@ -70,7 +73,6 @@ async def run_inference():
             
             obs, raw_reward, done, _ = env.step(action)
             
-            # SCALER MAIL FIX: Aggressive clamping on the step reward
             clamped_reward = max(0.01, min(0.99, float(raw_reward)))
             
             steps += 1
@@ -82,10 +84,8 @@ async def run_inference():
 
         success = "true" if total_reward >= 0.85 else "false"
         
-        # SCALER MAIL FIX: Aggressive clamping on the final score
         final_score = max(0.01, min(0.99, float(total_reward)))
         
-        # SCALER MAIL FIX: Injecting `score=` back into the END statement with flush
         print(f"[END] success={success} score={final_score:.2f} steps={steps} rewards={','.join(rewards_list)}", flush=True)
 
 if __name__ == "__main__":
