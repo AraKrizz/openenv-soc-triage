@@ -1,12 +1,10 @@
-spec_version: 1.0
-environment:
-  name: "CyberGuard SOC Triage"
-  description: "A real-world SOC analyst simulation where an agent must parse security logs and block malicious IP addresses."
-  version: "1.0.0"
-  tasks:
+spec_version: 1
+name: openenv-soc-triage
+app: server.app:app
+tasks:
   - id: easy
-    grader: server.grader.grade_easy
+    grader: server.grader:EasyGrader
   - id: medium
-    grader: server.grader.grade_medium
+    grader: server.grader:MediumGrader
   - id: hard
-    grader: server.grader.grade_hard
+    grader: server.grader:HardGrader
