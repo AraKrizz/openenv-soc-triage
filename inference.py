@@ -33,7 +33,6 @@ async def run_inference():
         env = SOCTriageEnv(task_id=current_task)
         obs = env.reset()
         
-        # FLUSH FIX APPLIED
         print(f"[START] task={current_task} env=soc-triage model={MODEL_NAME}", flush=True)
 
         total_reward = 0.0
@@ -53,7 +52,7 @@ async def run_inference():
                     response_format={ "type": "json_object" }
                 )
                 raw_content = response.choices[0].message.content
-            except Exception as e:
+            except Exception:
                 raw_content = '{"command": "ignore_alert", "target": ""}'
             
             match = re.search(r'\{.*\}', raw_content, re.DOTALL)
@@ -69,20 +68,25 @@ async def run_inference():
                 
             action = Action(command=res_data.get('command', 'ignore_alert'), target=res_data.get('target', ''))
             
-            obs, reward, done, _ = env.step(action)
+            obs, raw_reward, done, _ = env.step(action)
+            
+            # SCALER MAIL FIX: Aggressive clamping on the step reward
+            clamped_reward = max(0.01, min(0.99, float(raw_reward)))
             
             steps += 1
-            total_reward += float(reward)
-            rewards_list.append(f"{reward:.2f}")
+            total_reward += clamped_reward
+            rewards_list.append(f"{clamped_reward:.2f}")
 
-            # FLUSH FIX APPLIED
-            print(f"[STEP] step={steps} action={action.command} reward={reward:.2f} done={str(done).lower()} error=null", flush=True)
+            print(f"[STEP] step={steps} action={action.command} reward={clamped_reward:.2f} done={str(done).lower()} error=null", flush=True)
             if done: break
 
         success = "true" if total_reward >= 0.85 else "false"
         
-        # FLUSH FIX APPLIED (Ensuring the log is not swallowed)
-        print(f"[END] success={success} steps={steps} rewards={','.join(rewards_list)}", flush=True)
+        # SCALER MAIL FIX: Aggressive clamping on the final score
+        final_score = max(0.01, min(0.99, float(total_reward)))
+        
+        # SCALER MAIL FIX: Injecting `score=` back into the END statement with flush
+        print(f"[END] success={success} score={final_score:.2f} steps={steps} rewards={','.join(rewards_list)}", flush=True)
 
 if __name__ == "__main__":
     asyncio.run(run_inference())
